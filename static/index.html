@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  　<title>グラフ</title>
+</head>
+
+<body>
+  <h1>グラフ</h1>
+  <div id="chart_app">
+    <input v-model.number="chart_duration" type="number">
+    <input v-model.number="chart_interval" type="number">
+    <button v-on:click="chart_update">更新</button>
+    <button v-on:click="chart_stop_restart">停止/再開</button>
+    </div>
+  <canvas id="myBarChart"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+  <script> // <!--
+    var interval = 0.1;
+    var duration = 20;
+    var ctx = document.getElementById("myBarChart");
+    var myBarChart = new Chart(ctx, {
+      type: 'line',
+      data: {},
+      options: {
+        title: {
+          display: true,
+          text: 'current values'
+        },
+        scales: {
+          yAxes: [{
+            ticks: {
+              suggestedMax: 10,
+              suggestedMin: -10,
+              stepSize: 5,
+              callback: function (value, index, values) {
+                return value + '(A)'
+              }
+            }
+          }]
+        },
+      }
+    });
+    new Vue({
+      el: '#chart_app',
+      data:{
+        chart_interval : interval,
+        chart_duration : duration,
+        refreshtask : undefined
+      },
+      methods: {
+        chart_update: function(){
+          duration = this.chart_duration;
+          interval = this.chart_interval;
+        },
+        chart_stop_restart: function(){
+         updateChart();
+         if(this.refreshtask == undefined){
+          this.refreshtask = setInterval(updateChart, 500);
+         } else {
+           clearInterval(this.refreshtask);
+           this.refreshtask = undefined;
+         }
+        }
+      }
+    });
+
+    function updateChart() {
+      fetch('/api/current.json?duration=' + duration + '&interval=' + interval)
+        .then(res => res.json()).then(data => {
+          myBarChart.data = data;
+          myBarChart.update(0)
+        });
+    }
+  </script>
+</body>
+
+</html>
